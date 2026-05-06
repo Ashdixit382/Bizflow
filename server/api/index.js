@@ -1,11 +1,3 @@
-import express from "express";
-import cors from "cors";
-import helmet from "helmet";
-import morgan from "morgan";
-import mongoSanitize from "express-mongo-sanitize";
-import dotenv from "dotenv";
-import path from "path";
-import { fileURLToPath } from "url";
 import { connectDB } from "../src/config/db.js";
 import authRoutes from "../src/routes/authRoutes.js";
 import productRoutes from "../src/routes/productRoutes.js";
@@ -18,52 +10,62 @@ import dashboardRoutes from "../src/routes/dashboardRoutes.js";
 import reportRoutes from "../src/routes/reportRoutes.js";
 import { notFound, errorHandler } from "../src/middleware/errorMiddleware.js";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: path.join(__dirname, "../.env") });
-
-const app = express();
-
 // Connect to MongoDB
 await connectDB();
 
-// Middleware
-const corsOrigins = (process.env.CLIENT_URL || "")
-  .split(",")
-  .map((s) => s.trim())
-  .filter(Boolean);
+// Main handler for Vercel serverless functions
+export default async function handler(req, res) {
+  // Set CORS headers
+  const corsOrigins = (process.env.CLIENT_URL || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  
+  const origin = req.headers.origin;
+  if (corsOrigins.includes(origin) || corsOrigins.length === 0) {
+    res.setHeader("Access-Control-Allow-Origin", origin || "*");
+  }
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Access-Control-Allow-Credentials", "true");
 
-app.use(
-  helmet(),
-  cors({
-    origin: corsOrigins.length ? corsOrigins : true,
-    credentials: true,
-  })
-);
-app.use(express.json());
-app.use(mongoSanitize());
-app.use(morgan("dev"));
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
 
-// Static files for uploads (if needed)
-app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+  try {
+    // Parse URL
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const path = url.pathname.replace("/api", "");
+    
+    // Health check
+    if (path === "/health") {
+      return res.json({ ok: true, app: "BizFlow Manager API" });
+    }
 
-// Health check
-app.get("/health", (_, res) => 
-  res.json({ ok: true, app: "BizFlow Manager API" })
-);
-
-// API Routes
-app.use("/auth", authRoutes);
-app.use("/products", productRoutes);
-app.use("/customers", customerRoutes);
-app.use("/orders", orderRoutes);
-app.use("/sales", saleRoutes);
-app.use("/insights", insightRoutes);
-app.use("/notifications", notificationRoutes);
-app.use("/dashboard", dashboardRoutes);
-app.use("/reports", reportRoutes);
-
-// Error handling
-app.use(notFound);
-app.use(errorHandler);
-
-export default app;
+    // Route handling
+    if (path.startsWith("/auth")) {
+      return await authRoutes(req, res);
+    } else if (path.startsWith("/products")) {
+      return await productRoutes(req, res);
+    } else if (path.startsWith("/customers")) {
+      return await customerRoutes(req, res);
+    } else if (path.startsWith("/orders")) {
+      return await orderRoutes(req, res);
+    } else if (path.startsWith("/sales")) {
+      return await saleRoutes(req, res);
+    } else if (path.startsWith("/insights")) {
+      return await insightRoutes(req, res);
+    } else if (path.startsWith("/notifications")) {
+      return await notificationRoutes(req, res);
+    } else if (path.startsWith("/dashboard")) {
+      return await dashboardRoutes(req, res);
+    } else if (path.startsWith("/reports")) {
+      return await reportRoutes(req, res);
+    } else {
+      return notFound(req, res);
+    }
+  } catch (error) {
+    return errorHandler(error, req, res);
+  }
+}
