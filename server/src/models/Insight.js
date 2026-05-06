@@ -1,0 +1,1 @@
+import mongoose from "mongoose"; const s=new mongoose.Schema({category:{type:String,enum:["sales","inventory","customer","operations","forecast"]},title:String,description:String,recommendation:String,confidence:Number,impact:String,priority:{type:String,enum:["low","medium","high"]}},{timestamps:true}); export default mongoose.model("Insight",s);

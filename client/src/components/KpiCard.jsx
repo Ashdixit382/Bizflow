@@ -1,0 +1,1 @@
+import { motion } from "framer-motion"; export default function KpiCard({title,value}){return <motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} className="glass p-4 rounded-xl shadow-glass"><p className="text-sm text-slate-500">{title}</p><h3 className="text-2xl font-bold mt-1">{value}</h3></motion.div>; }

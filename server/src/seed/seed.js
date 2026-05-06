@@ -1,0 +1,24 @@
+import dotenv from "dotenv";
+import bcrypt from "bcryptjs";
+import { connectDB } from "../config/db.js";
+import User from "../models/User.js";
+import Product from "../models/Product.js";
+import Customer from "../models/Customer.js";
+import Order from "../models/Order.js";
+import Sale from "../models/Sale.js";
+import Notification from "../models/Notification.js";
+import Insight from "../models/Insight.js";
+import { generateInsights } from "../services/insightEngine.js";
+
+dotenv.config({ path: new URL("../../.env", import.meta.url).pathname });
+await connectDB();
+await Promise.all([User.deleteMany({}),Product.deleteMany({}),Customer.deleteMany({}),Order.deleteMany({}),Sale.deleteMany({}),Notification.deleteMany({}),Insight.deleteMany({})]);
+const pass=await bcrypt.hash("password123",10);
+await User.insertMany([{name:"Admin User",email:"admin@bizflow.com",password:pass,role:"admin"},{name:"Staff User",email:"staff@bizflow.com",password:pass,role:"staff"}]);
+const products=await Product.insertMany([{name:"Wireless Mouse",category:"Accessories",sku:"ACC-001",stock:45,price:999,costPrice:620,supplier:"TechNova",lastSoldAt:new Date()},{name:"Keyboard Pro",category:"Accessories",sku:"ACC-002",stock:8,price:1999,costPrice:1400,supplier:"KeyHub",lastSoldAt:new Date(Date.now()-35*86400000)},{name:"27in Monitor",category:"Displays",sku:"DSP-001",stock:12,price:13999,costPrice:11100,supplier:"Visionix",lastSoldAt:new Date()}]);
+const customers=await Customer.insertMany([{name:"Aman Verma",email:"aman@example.com",phone:"9999999991",address:"Delhi",totalOrders:3,totalSpent:24000},{name:"Riya Shah",email:"riya@example.com",phone:"9999999992",address:"Mumbai",totalOrders:2,totalSpent:9000}]);
+const order=await Order.create({customer:customers[0]._id,items:[{product:products[0]._id,name:products[0].name,qty:2,price:products[0].price}],totalAmount:1998,status:"Completed",paymentStatus:"Paid",invoiceNo:"INV-1001"});
+await Sale.insertMany([{order:order._id,amount:1998,cost:1240,profit:758,soldAt:new Date()},{amount:3400,cost:2200,profit:1200,soldAt:new Date(Date.now()-3*86400000)},{amount:4500,cost:2600,profit:1900,soldAt:new Date(Date.now()-10*86400000)}]);
+await Notification.insertMany([{title:"Low Stock Alert",message:"Keyboard Pro stock below threshold",type:"warning",priority:"high"},{title:"Sales Insight",message:"Demand forecast indicates 12% rise next week",type:"info"}]);
+await Insight.insertMany(generateInsights({weeklyRevenue:18000,prevWeeklyRevenue:22000,lowStockCount:1,deadStockValue:11200}).insights);
+console.log("Seed completed"); process.exit(0);

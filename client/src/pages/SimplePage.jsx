@@ -1,0 +1,1 @@
+export default function SimplePage({title,desc}){return <div className="glass p-6 rounded-xl"><h1 className="text-xl font-semibold">{title}</h1><p className="text-slate-500 text-sm mt-2">{desc}</p></div>; }

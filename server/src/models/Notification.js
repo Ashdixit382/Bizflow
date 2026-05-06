@@ -1,0 +1,1 @@
+import mongoose from "mongoose"; const s=new mongoose.Schema({title:String,message:String,type:{type:String,enum:["info","warning","success","danger"],default:"info"},read:{type:Boolean,default:false},priority:{type:String,enum:["low","medium","high"],default:"medium"}},{timestamps:true}); export default mongoose.model("Notification",s);

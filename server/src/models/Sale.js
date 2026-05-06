@@ -1,0 +1,1 @@
+import mongoose from "mongoose"; const s=new mongoose.Schema({order:{type:mongoose.Schema.Types.ObjectId,ref:"Order"},amount:Number,cost:Number,profit:Number,soldAt:{type:Date,default:Date.now}},{timestamps:true}); export default mongoose.model("Sale",s);
